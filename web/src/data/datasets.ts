@@ -1,0 +1,69 @@
+import type { Dataset } from "@/lib/types";
+
+/**
+ * Datasets you collected, labelled or cleaned. If HF_USERNAME is set, your
+ * public Hugging Face datasets are listed automatically; add an entry here with
+ * the same id to give one a better description, labels or notes.
+ *
+ * A model links to a dataset through its `datasets` field (same id).
+ *
+ * The entries below are SAMPLE data — replace them with your own datasets.
+ */
+export const localDatasets: Dataset[] = [
+  {
+    id: "your-username/meal-nutrition",
+    name: "Meal Nutrition",
+    author: "your-username",
+    description:
+      "Meal photos paired with portion sizes and lab-checked nutrition facts: calories, sodium, sugar, carbs, fats and protein.",
+    modality: "multimodal",
+    task: "image-text-to-text",
+    size: "18.2K images",
+    labels: ["Calories", "Sodium", "Sugar", "Carbs", "Fats", "Protein"],
+    license: "cc-by-4.0",
+    tags: ["food", "nutrition"],
+    downloads: 0,
+    likes: 0,
+    updatedAt: "2026-10-18",
+    links: { huggingface: "https://huggingface.co/datasets/your-username/meal-nutrition" },
+    source: "local",
+  },
+  {
+    id: "your-username/gym-form-reps",
+    name: "Gym Form Reps",
+    author: "your-username",
+    description:
+      "Short clips of squats, deadlifts and push-ups with per-frame keypoints and good / bad form labels for each rep.",
+    modality: "video",
+    task: "keypoint-detection",
+    size: "4.1K clips",
+    labels: ["Squat", "Deadlift", "Push-up", "Good form", "Bad form"],
+    license: "cc-by-nc-4.0",
+    tags: ["fitness", "pose"],
+    downloads: 0,
+    likes: 0,
+    updatedAt: "2026-10-09",
+    notes: "All participants gave written consent. Faces are blurred before release.",
+    links: { huggingface: "https://huggingface.co/datasets/your-username/gym-form-reps" },
+    source: "local",
+  },
+  {
+    id: "your-username/apron-detections",
+    name: "Apron Detections",
+    author: "your-username",
+    description:
+      "Airport apron and terminal frames with boxes for aircraft, ground vehicles and people, plus crowd-density maps.",
+    modality: "image",
+    task: "object-detection",
+    size: "9.6K images",
+    labels: ["Aircraft", "Tug", "Fuel truck", "Baggage cart", "Person"],
+    license: "cc-by-4.0",
+    tags: ["aviation", "detection", "crowd"],
+    downloads: 0,
+    likes: 0,
+    updatedAt: "2026-09-28",
+    notes: "People are only labelled as boxes; no identities. Collected from public webcams with permission.",
+    links: { huggingface: "https://huggingface.co/datasets/your-username/apron-detections" },
+    source: "local",
+  },
+];

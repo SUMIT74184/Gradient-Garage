@@ -1,0 +1,370 @@
+[
+  {
+    "id": "your-username/nutrino",
+    "name": "Nutrino",
+    "author": "your-username",
+    "description": "Food nutrition model: give it a meal photo, a recipe, a menu item or a label and it estimates calories, energy, sodium, sugar, carbs and fats.",
+    "task": "image-text-to-text",
+    "kind": "base",
+    "license": "apache-2.0",
+    "tags": [
+      "nutrition",
+      "food",
+      "health",
+      "calories"
+    ],
+    "capabilities": [
+      "Calories",
+      "Energy (kJ)",
+      "Sodium",
+      "Sugar",
+      "Carbohydrates",
+      "Fats",
+      "Protein"
+    ],
+    "downloads": 0,
+    "likes": 0,
+    "updatedAt": "2026-10-27",
+    "datasets": [
+      "your-username/meal-nutrition"
+    ],
+    "links": {
+      "huggingface": "https://huggingface.co/your-username/nutrino"
+    },
+    "source": "local"
+  },
+  {
+    "id": "your-username/ex-posture",
+    "name": "Ex",
+    "author": "your-username",
+    "description": "Gym posture model: tracks body keypoints through each rep, checks form against the exercise and flags posture mistakes in real time.",
+    "task": "keypoint-detection",
+    "kind": "base",
+    "license": "apache-2.0",
+    "tags": [
+      "fitness",
+      "pose-estimation",
+      "gym",
+      "computer-vision"
+    ],
+    "capabilities": [
+      "Pose keypoints",
+      "Rep counting",
+      "Form scoring",
+      "Posture correction cues"
+    ],
+    "downloads": 0,
+    "likes": 0,
+    "updatedAt": "2026-10-27",
+    "usage": "from huggingface_hub import snapshot_download\n\npath = snapshot_download(\"your-username/ex-posture\")\nprint(\"Model files in\", path)",
+    "datasets": [
+      "your-username/gym-form-reps"
+    ],
+    "links": {
+      "huggingface": "https://huggingface.co/your-username/ex-posture"
+    },
+    "source": "local"
+  },
+  {
+    "id": "your-username/airport-ops",
+    "name": "Airport Ops",
+    "author": "your-username",
+    "description": "Operations intelligence for airports: tracks aircraft and ground movements, hangar usage and passenger crowd density to support logistics and crowd management.",
+    "task": "object-detection",
+    "kind": "base",
+    "license": "apache-2.0",
+    "tags": [
+      "aviation",
+      "logistics",
+      "crowd-management",
+      "operations"
+    ],
+    "capabilities": [
+      "Aircraft tracking",
+      "Hangar occupancy",
+      "Crowd density",
+      "Ground logistics",
+      "Congestion alerts"
+    ],
+    "downloads": 0,
+    "likes": 0,
+    "updatedAt": "2026-10-27",
+    "datasets": [
+      "your-username/apron-detections"
+    ],
+    "links": {
+      "huggingface": "https://huggingface.co/your-username/airport-ops"
+    },
+    "source": "local"
+  },
+  {
+    "id": "your-username/aegis-ai-guard-1.1b",
+    "name": "Aegis AI Guard",
+    "author": "your-username",
+    "description": "Safety guard fine-tuned from a 1.1B model served with Ollama. Detects toxic messages and silently removes them before they reach users.",
+    "task": "text-classification",
+    "kind": "fine-tuned",
+    "baseModel": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+    "params": "1.1B",
+    "license": "apache-2.0",
+    "library": "transformers",
+    "tags": [
+      "safety",
+      "moderation",
+      "toxicity",
+      "ollama"
+    ],
+    "capabilities": [
+      "Toxicity detection",
+      "Silent removal",
+      "Chat moderation"
+    ],
+    "downloads": 0,
+    "likes": 0,
+    "updatedAt": "2026-10-27",
+    "links": {
+      "huggingface": "https://huggingface.co/your-username/aegis-ai-guard-1.1b"
+    },
+    "source": "local"
+  },
+  {
+    "id": "your-username/nova-1.1b",
+    "name": "Nova 1.1B",
+    "author": "your-username",
+    "description": "Compact decoder-only language model pretrained on 300B tokens of filtered web, code and books.",
+    "task": "text-generation",
+    "kind": "base",
+    "params": "1.1B",
+    "license": "apache-2.0",
+    "library": "transformers",
+    "tags": [
+      "llm",
+      "english",
+      "pretrained"
+    ],
+    "downloads": 48210,
+    "likes": 312,
+    "updatedAt": "2026-09-14",
+    "benchmarks": [
+      {
+        "name": "MMLU",
+        "score": 38.4,
+        "unit": "%"
+      },
+      {
+        "name": "HellaSwag",
+        "score": 61.2,
+        "unit": "%"
+      },
+      {
+        "name": "ARC-C",
+        "score": 35.9,
+        "unit": "%"
+      }
+    ],
+    "links": {
+      "huggingface": "https://huggingface.co/your-username/nova-1.1b",
+      "github": "https://github.com/your-username/nova"
+    },
+    "source": "local"
+  },
+  {
+    "id": "your-username/nova-1.1b-instruct",
+    "name": "Nova 1.1B Instruct",
+    "author": "your-username",
+    "description": "Instruction-tuned Nova with SFT on curated chat data followed by DPO for helpfulness.",
+    "task": "text-generation",
+    "kind": "fine-tuned",
+    "baseModel": "your-username/nova-1.1b",
+    "datasets": [
+      "HuggingFaceH4/ultrachat_200k",
+      "HuggingFaceH4/ultrafeedback_binarized"
+    ],
+    "params": "1.1B",
+    "license": "apache-2.0",
+    "library": "transformers",
+    "tags": [
+      "chat",
+      "sft",
+      "dpo"
+    ],
+    "downloads": 91544,
+    "likes": 587,
+    "updatedAt": "2026-10-02",
+    "benchmarks": [
+      {
+        "name": "MMLU",
+        "score": 41.7,
+        "unit": "%"
+      },
+      {
+        "name": "HellaSwag",
+        "score": 63,
+        "unit": "%"
+      },
+      {
+        "name": "ARC-C",
+        "score": 39.4,
+        "unit": "%"
+      },
+      {
+        "name": "MT-Bench",
+        "score": 5.8
+      }
+    ],
+    "links": {
+      "huggingface": "https://huggingface.co/your-username/nova-1.1b-instruct",
+      "demo": "https://huggingface.co/spaces/your-username/nova-chat"
+    },
+    "source": "local"
+  },
+  {
+    "id": "your-username/nova-coder-1.1b",
+    "name": "Nova Coder 1.1B",
+    "author": "your-username",
+    "description": "Nova fine-tuned with LoRA on permissively licensed Python and TypeScript.",
+    "task": "text-generation",
+    "kind": "fine-tuned",
+    "baseModel": "your-username/nova-1.1b",
+    "datasets": [
+      "bigcode/the-stack-smol"
+    ],
+    "params": "1.1B",
+    "license": "apache-2.0",
+    "library": "peft",
+    "tags": [
+      "code",
+      "lora"
+    ],
+    "downloads": 22870,
+    "likes": 204,
+    "updatedAt": "2026-08-21",
+    "benchmarks": [
+      {
+        "name": "HumanEval",
+        "score": 29.3,
+        "unit": "%"
+      },
+      {
+        "name": "MBPP",
+        "score": 34.8,
+        "unit": "%"
+      },
+      {
+        "name": "MMLU",
+        "score": 36.1,
+        "unit": "%"
+      }
+    ],
+    "links": {
+      "huggingface": "https://huggingface.co/your-username/nova-coder-1.1b"
+    },
+    "source": "local"
+  },
+  {
+    "id": "your-username/vit-small-plants",
+    "name": "ViT-S Plant Disease",
+    "author": "your-username",
+    "description": "ViT-Small fine-tuned to classify 38 plant leaf diseases from field photos.",
+    "task": "image-classification",
+    "kind": "fine-tuned",
+    "baseModel": "google/vit-base-patch16-224",
+    "datasets": [
+      "plant-village"
+    ],
+    "params": "22M",
+    "license": "mit",
+    "library": "transformers",
+    "tags": [
+      "vision",
+      "agriculture"
+    ],
+    "downloads": 13402,
+    "likes": 96,
+    "updatedAt": "2026-07-30",
+    "benchmarks": [
+      {
+        "name": "Top-1 Acc",
+        "score": 97.6,
+        "unit": "%"
+      },
+      {
+        "name": "F1 (macro)",
+        "score": 96.9,
+        "unit": "%"
+      }
+    ],
+    "links": {
+      "huggingface": "https://huggingface.co/your-username/vit-small-plants"
+    },
+    "source": "local"
+  },
+  {
+    "id": "your-username/whisper-small-hi",
+    "name": "Whisper Small Hindi",
+    "author": "your-username",
+    "description": "Whisper Small fine-tuned for Hindi speech recognition on Common Voice.",
+    "task": "automatic-speech-recognition",
+    "kind": "fine-tuned",
+    "baseModel": "openai/whisper-small",
+    "datasets": [
+      "mozilla-foundation/common_voice_17_0"
+    ],
+    "params": "244M",
+    "license": "apache-2.0",
+    "library": "transformers",
+    "tags": [
+      "speech",
+      "hindi"
+    ],
+    "downloads": 30117,
+    "likes": 178,
+    "updatedAt": "2026-10-11",
+    "benchmarks": [
+      {
+        "name": "WER",
+        "score": 18.2,
+        "unit": "%",
+        "lowerIsBetter": true
+      }
+    ],
+    "links": {
+      "huggingface": "https://huggingface.co/your-username/whisper-small-hi"
+    },
+    "source": "local"
+  },
+  {
+    "id": "your-username/minilm-embed-v2",
+    "name": "MiniLM Embed v2",
+    "author": "your-username",
+    "description": "Sentence embedding model for semantic search, distilled from a larger encoder.",
+    "task": "sentence-similarity",
+    "kind": "base",
+    "params": "33M",
+    "license": "mit",
+    "library": "sentence-transformers",
+    "tags": [
+      "embeddings",
+      "retrieval"
+    ],
+    "downloads": 64008,
+    "likes": 241,
+    "updatedAt": "2026-06-05",
+    "benchmarks": [
+      {
+        "name": "MTEB Avg",
+        "score": 58.9,
+        "unit": "%"
+      },
+      {
+        "name": "STS-B",
+        "score": 84.3,
+        "unit": "%"
+      }
+    ],
+    "links": {
+      "huggingface": "https://huggingface.co/your-username/minilm-embed-v2"
+    },
+    "source": "local"
+  }
+]

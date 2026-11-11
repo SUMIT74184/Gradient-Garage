@@ -1,0 +1,90 @@
+import type { Library } from "@/lib/types";
+
+/**
+ * Libraries, CLIs and tools you wrote. Add an entry for each one.
+ *
+ * - `repo` ("owner/name"): stars, license and last push are pulled live from GitHub.
+ * - `pypi` / `npm`: the latest version is pulled live.
+ * - `usedBy`: model ids built with the library; the model drawer links back to it.
+ *
+ * The entries below are SAMPLE data — replace them with your own libraries.
+ * They have no `repo`/`pypi` set so the page doesn't call GitHub or PyPI for
+ * packages that don't exist.
+ */
+export const localLibraries: Library[] = [
+  {
+    id: "posekit",
+    name: "posekit",
+    description:
+      "Pose-estimation toolkit: keypoint smoothing, joint-angle maths, rep segmentation and form rules you can write in a few lines.",
+    language: "Python",
+    install: "pip install posekit",
+    version: "0.4.2",
+    stars: 128,
+    license: "apache-2.0",
+    tags: ["computer-vision", "pose", "fitness"],
+    features: ["Keypoint smoothing", "Joint angles", "Rep segmentation", "Form rules DSL"],
+    usage: `from posekit import Tracker, rules
+
+tracker = Tracker("your-username/ex-posture")
+for frame in tracker.stream("squat.mp4"):
+    if rules.knees_over_toes(frame.pose):
+        print(frame.t, "knees too far forward")`,
+    usedBy: ["your-username/ex-posture"],
+    updatedAt: "2026-10-20",
+    links: { github: "https://github.com/your-username/posekit" },
+  },
+  {
+    id: "evalkit",
+    name: "evalkit",
+    description:
+      "One-command evaluation harness: runs a model on standard benchmarks and writes scores straight into this hub's leaderboard format.",
+    language: "Python",
+    install: "pip install evalkit",
+    version: "1.1.0",
+    stars: 342,
+    license: "mit",
+    tags: ["evaluation", "benchmarks", "cli"],
+    features: ["MMLU / HellaSwag / ARC", "Vision Top-1 & F1", "WER for speech", "JSON + Markdown reports"],
+    usage: `evalkit run your-username/nova-1.1b-instruct --suite mmlu,hellaswag,arc-c
+evalkit export --format gradient-garage > benchmarks.json`,
+    usedBy: [
+      "your-username/nova-1.1b",
+      "your-username/nova-1.1b-instruct",
+      "your-username/nova-coder-1.1b",
+      "your-username/vit-small-plants",
+      "your-username/whisper-small-hi",
+    ],
+    updatedAt: "2026-10-05",
+    links: { github: "https://github.com/your-username/evalkit" },
+  },
+  {
+    id: "crowdflow",
+    name: "crowdflow",
+    description:
+      "Crowd-density and flow estimation from CCTV: heatmaps, zone counts and congestion alerts on top of any detector.",
+    language: "Python",
+    install: "pip install crowdflow",
+    version: "0.2.0",
+    stars: 57,
+    license: "apache-2.0",
+    tags: ["computer-vision", "tracking", "crowd"],
+    features: ["Zone counting", "Density heatmaps", "Flow vectors", "Alert webhooks"],
+    usedBy: ["your-username/airport-ops"],
+    updatedAt: "2026-09-12",
+    links: { github: "https://github.com/your-username/crowdflow" },
+  },
+  {
+    id: "gradient-garage",
+    name: "Gradient Garage",
+    description: "This site: an open-source hub for your models, libraries, datasets and demos.",
+    language: "TypeScript",
+    install: "npx degit your-username/gradient-garage my-hub",
+    stars: 21,
+    license: "mit",
+    tags: ["nextjs", "dashboard"],
+    features: ["Hugging Face sync", "Leaderboard", "⌘K search"],
+    updatedAt: "2026-11-11",
+    links: { github: "https://github.com/your-username/gradient-garage" },
+  },
+];

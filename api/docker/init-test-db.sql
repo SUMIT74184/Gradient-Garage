@@ -1,0 +1,1 @@
+CREATE DATABASE gg_test OWNER gg;
