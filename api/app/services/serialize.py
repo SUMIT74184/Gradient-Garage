@@ -9,6 +9,7 @@ from pydantic.alias_generators import to_camel
 
 from app.models import ContentItem, ContentType, Model
 from app.schemas.content import FIELDS_BY_TYPE
+from app.storage import get_storage
 
 # Fields that aren't plain columns on the item
 SPECIAL = {"type", "tags", "label_ids", "benchmarks"}
@@ -55,9 +56,17 @@ def diff(before: dict[str, Any], after: dict[str, Any]) -> dict[str, list[Any]]:
     return {k: [before.get(k), after.get(k)] for k in after.keys() | before.keys() if before.get(k) != after.get(k)}
 
 
+def _cover(item: ContentItem) -> dict[str, Any] | None:
+    m = item.cover
+    if m is None:
+        return None
+    return {"url": get_storage().url(m.storage_key), "alt": m.alt, "width": m.width, "height": m.height}
+
+
 def admin_out(item: ContentItem) -> dict[str, Any]:
     return {
         **snapshot(item),
+        "cover": _cover(item),
         "id": str(item.id),
         "type": item.type.value,
         "status": item.status.value,
@@ -99,6 +108,7 @@ def _common(item: ContentItem) -> dict[str, Any]:
         "badges": list(item.badges or []),
         "featured": item.featured,
         "sortOrder": item.sort_order,
+        "cover": _cover(item),
     }
 
 

@@ -12,6 +12,8 @@ npm run dev
 
 ## Adding models
 
+**With the admin panel (recommended):** set `API_URL` and `ADMIN_DEV_MODE=true` in `.env.local`, run the API (see the root README) and manage everything at `/admin`. The files below are only used when `API_URL` is not set.
+
 Models come from two places, merged by id:
 
 1. **`src/data/models.ts`**: your local registry. Add descriptions, benchmarks, datasets and links here. (The entries there now are sample data.)

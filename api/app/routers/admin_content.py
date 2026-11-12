@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from pydantic.alias_generators import to_camel
 from sqlalchemy import func, select
 
-from app.deps import Actor, Db
+from app.deps import Db, Editor, Owner
 from app.errors import Invalid
 from app.models import ContentItem, ContentType, Source, Status
 from app.schemas.content import (
@@ -46,7 +46,7 @@ def list_content(
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-def create_content(db: Db, actor: Actor, payload: Annotated[ContentCreate, Body()]) -> dict[str, Any]:
+def create_content(db: Db, actor: Editor, payload: Annotated[ContentCreate, Body()]) -> dict[str, Any]:
     item = svc.create_item(db, payload, actor)
     db.commit()
     return admin_out(item)
@@ -65,7 +65,7 @@ def summary(db: Db) -> dict[str, Any]:
 
 
 @router.put("/order", status_code=status.HTTP_204_NO_CONTENT)
-def set_order(db: Db, actor: Actor, payload: OrderIn) -> None:
+def set_order(db: Db, actor: Editor, payload: OrderIn) -> None:
     svc.set_order(db, payload.type, payload.ids, actor)
     db.commit()
 
@@ -76,7 +76,7 @@ def get_content(db: Db, item_id: uuid.UUID) -> dict[str, Any]:
 
 
 @router.patch("/{item_id}")
-def update_content(db: Db, actor: Actor, item_id: uuid.UUID, body: Annotated[dict[str, Any], Body()]) -> dict[str, Any]:
+def update_content(db: Db, actor: Editor, item_id: uuid.UUID, body: Annotated[dict[str, Any], Body()]) -> dict[str, Any]:
     """Send only the fields you change, plus the `version` you loaded (409 if it's stale).
 
     The accepted fields depend on the item's type; see the `*Patch` schemas.
@@ -94,10 +94,22 @@ def update_content(db: Db, actor: Actor, item_id: uuid.UUID, body: Annotated[dic
     return admin_out(item)
 
 
+class OverridesResetIn(TransitionIn):
+    fields: list[str]
+
+
+@router.post("/{item_id}/overrides/reset")
+def reset_overrides(db: Db, actor: Editor, item_id: uuid.UUID, payload: OverridesResetIn) -> dict[str, Any]:
+    """Hand edited fields back to the Hugging Face sync (they take the remote value on the next run)."""
+    item = svc.reset_overrides(db, item_id, payload.fields, payload.version, actor)
+    db.commit()
+    return admin_out(item)
+
+
 @router.post("/{item_id}/{action}")
 def transition_content(
     db: Db,
-    actor: Actor,
+    actor: Editor,
     item_id: uuid.UUID,
     action: Literal["publish", "unpublish", "archive", "restore"],
     payload: TransitionIn,
@@ -108,7 +120,7 @@ def transition_content(
 
 
 @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_content(db: Db, actor: Actor, item_id: uuid.UUID) -> None:
+def delete_content(db: Db, actor: Owner, item_id: uuid.UUID) -> None:
     svc.delete_item(db, item_id, actor)
     db.commit()
 
@@ -128,7 +140,7 @@ def get_revision(db: Db, item_id: uuid.UUID, rev_version: int):
 
 
 @router.post("/{item_id}/revisions/{rev_version}/restore")
-def restore_revision(db: Db, actor: Actor, item_id: uuid.UUID, rev_version: int, payload: TransitionIn) -> dict[str, Any]:
+def restore_revision(db: Db, actor: Editor, item_id: uuid.UUID, rev_version: int, payload: TransitionIn) -> dict[str, Any]:
     item = svc.restore_revision(db, item_id, rev_version, payload.version, actor)
     db.commit()
     return admin_out(item)

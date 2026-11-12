@@ -1,11 +1,11 @@
 import Link from "next/link";
-import AuthForm from "@/components/AuthForm";
+import type { ReactNode } from "react";
 import GoldParticleWave from "@/components/GoldParticleWave";
 import { Logo } from "@/components/Navbar";
 import { site } from "@/config/site";
 
-/** Split auth layout: form on the left, the giraffe particle scene on the right (large screens). */
-export default function AuthShell({ mode }: { mode: "login" | "signup" }) {
+/** Split auth layout: the form on the left, the giraffe particle scene on the right (large screens). */
+export default function AuthShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen w-full bg-ink">
       <div className="flex flex-1 flex-col px-6 py-6 md:px-12">
@@ -14,7 +14,7 @@ export default function AuthShell({ mode }: { mode: "login" | "signup" }) {
           <span className="display text-lg text-fg">{site.name}</span>
         </Link>
         <main className="flex flex-1 items-center justify-center py-12">
-          <AuthForm mode={mode} />
+          <div className="w-full max-w-[400px]">{children}</div>
         </main>
         <p className="text-xs text-muted">
           <Link href="/" className="transition-colors hover:text-fg">

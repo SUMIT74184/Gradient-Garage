@@ -1,12 +1,14 @@
 import type { CSSProperties } from "react";
 import { TypeIcon, type ItemType } from "@/components/ui";
-import { SECTION_ORDER, SECTIONS, href } from "@/config/sections";
+import { useSections } from "@/components/SiteContentProvider";
+import { SECTION_ORDER, href } from "@/config/sections";
 import type { Hub } from "@/lib/types";
 
-const TILES = SECTION_ORDER.map((type) => ({ type, href: href(type), ...SECTIONS[type] }));
 
 /** Four jump tiles at the top of the dashboard: one per section, with live counts. */
 export default function HubOverview({ hub }: { hub: Hub }) {
+  const sections = useSections();
+  const TILES = SECTION_ORDER.map((type) => ({ type, href: href(type), ...sections[type] }));
   const counts: Record<ItemType, number> = {
     model: hub.models.length,
     library: hub.libraries.length,

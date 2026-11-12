@@ -2,6 +2,7 @@
 
 import CopyCommand from "@/components/CopyCommand";
 import SectionHeader from "@/components/SectionHeader";
+import { useSections } from "@/components/SiteContentProvider";
 import StatusBadges from "@/components/StatusBadges";
 import { SECTIONS } from "@/config/sections";
 import { EmptyState, LanguageDot, Pill } from "@/components/ui";
@@ -15,10 +16,11 @@ export default function LibrariesSection({
   libraries: Library[];
   onSelect: (s: Selection) => void;
 }) {
+  const sections = useSections();
   return (
     <section id={SECTIONS.library.id} className="scroll-mt-24">
       <SectionHeader
-        eyebrow={SECTIONS.library.label}
+        eyebrow={sections.library.label}
         title="The code behind"
         accent="the checkpoints."
         description="Libraries, SDKs and CLIs I wrote while building these checkpoints. Install them in one line."

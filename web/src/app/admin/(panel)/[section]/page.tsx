@@ -4,6 +4,7 @@ import ItemsTable from "@/components/admin/ItemsTable";
 import ListFilters from "@/components/admin/ListFilters";
 import { PageHeader, buttonClass } from "@/components/admin/ui";
 import { getLabels, getTags, listItems } from "@/lib/admin/data";
+import { can, requireUser } from "@/lib/auth";
 import { sectionBySlug } from "@/lib/admin/schema";
 
 const TABS = [
@@ -35,6 +36,7 @@ export default async function SectionPage({ params, searchParams }: PageProps<"/
     sort: one(sp.sort) ?? "-updated",
   };
 
+  const user = await requireUser();
   const [list, tags, labels] = await Promise.all([
     listItems({ type: section.type, status: [...tab.status], page, pageSize: PAGE_SIZE, ...filters }),
     getTags(),
@@ -60,12 +62,22 @@ export default async function SectionPage({ params, searchParams }: PageProps<"/
         description={`${list.total} ${list.total === 1 ? "item" : "items"} ${tab.id === "all" ? "in total" : `in ${tab.label.toLowerCase()}`}`}
         actions={
           <>
+            <a href={`/admin/export/${section.slug}`} className={buttonClass.ghost} download>
+              Export CSV
+            </a>
+            {can(user, "editor") && (
+            <>
+            <Link href={`${base}/import`} className={buttonClass.ghost}>
+              Import CSV
+            </Link>
             <Link href={`${base}/order`} className={buttonClass.secondary}>
               Featured &amp; order
             </Link>
             <Link href={`${base}/new`} className={buttonClass.primary}>
               + New {section.item.toLowerCase()}
             </Link>
+            </>
+            )}
           </>
         }
       />
@@ -94,7 +106,13 @@ export default async function SectionPage({ params, searchParams }: PageProps<"/
         labels={labels}
       />
 
-      <ItemsTable items={list.items} sectionSlug={section.slug} emptyText={emptyText(tab.id, !!(filters.q || filters.tag || filters.label || filters.badge || filters.featured))} />
+      <ItemsTable
+        items={list.items}
+        sectionSlug={section.slug}
+        labels={labels}
+        tagSuggestions={tags.map((t) => t.name)}
+        emptyText={emptyText(tab.id, !!(filters.q || filters.tag || filters.label || filters.badge || filters.featured))}
+      />
 
       {pages > 1 && (
         <nav aria-label="Pagination" className="flex items-center justify-between text-sm">

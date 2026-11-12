@@ -199,7 +199,7 @@ export default function HubDrawer({
           : { title: `${item.emoji ? `${item.emoji} ` : ""}${item.name}`, subtitle: item.id };
 
   return (
-    <DrawerShell type={type} scrollKey={key} onClose={onClose} {...header}>
+    <DrawerShell type={type} scrollKey={key} itemId={item.id} onClose={onClose} {...header}>
       {type === "model" && <ModelDrawer key={key} model={item} hub={hub} onSelect={onSelect} />}
       {type === "library" && <LibraryBody key={key} lib={item} hub={hub} onSelect={onSelect} />}
       {type === "dataset" && <DatasetBody key={key} ds={item} hub={hub} onSelect={onSelect} />}

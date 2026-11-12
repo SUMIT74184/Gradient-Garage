@@ -13,14 +13,25 @@ export class ApiError extends Error {
   }
 }
 
+/** Sent on every call so the API can trust forwarded client info and OAuth identities. */
+const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "";
+
 /** JSON request to the backend. Throws ApiError on non-2xx; returns null for 204. */
-export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function api<T>(path: string, init: RequestInit & { token?: string } = {}): Promise<T> {
+  const { token, ...rest } = init;
+  const extra: Record<string, string> = {};
+  if (INTERNAL_SECRET) extra["X-Internal-Secret"] = INTERNAL_SECRET;
+  if (token) extra.Authorization = `Bearer ${token}`;
   if (!API_URL) throw new ApiError(503, { detail: "API_URL is not set" });
   let res: Response;
   try {
     res = await fetch(`${API_URL}/api/v1${path}`, {
-      ...init,
-      headers: { "Content-Type": "application/json", ...init.headers },
+      ...rest,
+      // FormData sets its own multipart boundary header
+      headers:
+        rest.body instanceof FormData
+          ? { ...extra, ...(rest.headers as Record<string, string>) }
+          : { "Content-Type": "application/json", ...extra, ...(rest.headers as Record<string, string>) },
       cache: "no-store",
     });
   } catch {

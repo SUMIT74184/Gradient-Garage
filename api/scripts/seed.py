@@ -14,7 +14,7 @@ from pathlib import Path
 from sqlalchemy import delete, func, select
 
 from app.db import SessionLocal
-from app.deps import get_or_create_dev_owner
+from app.deps import get_or_create_system_user
 from app.models import AuditLog, ContentItem, ContentType, Label, Revision, Tag
 from app.schemas.content import FIELDS_BY_TYPE
 from app.services import content as svc
@@ -66,7 +66,7 @@ def main() -> None:
                 db.execute(delete(model))
             db.commit()
 
-        actor = get_or_create_dev_owner(db)
+        actor = get_or_create_system_user(db)
 
         existing_labels = {n.lower() for n in db.scalars(select(Label.name))}
         for name, color, desc in DEFAULT_LABELS:

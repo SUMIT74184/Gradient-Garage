@@ -116,10 +116,58 @@ Joined-table inheritance: a shared `content_items` row + a type table per kind. 
 - Seed: `web/scripts/export-seed.mjs` → `api/seed/*.json` → `python -m scripts.seed` (all 20 sample items, published, labelled "Sample data")
 - 18 tests, including a parity test: seeded `/public/hub` equals today's static data
 
-Notes for Phase 2: library GitHub stars and PyPI/npm versions are still fetched live in `web/src/lib/libraries.ts`; move that into the HF/GitHub sync job in Phase 5 or keep it in web.
+**Phase 2 — done (2026-11-11)**
+- `web/src/lib/hub.ts`: with `API_URL` set, the site reads `/api/v1/public/hub` (`"use cache"`, tag `hub`, 1 min revalidate); without it, the old static + Hugging Face path still works
+- Admin server actions call `updateTag("hub")`, so changes show on the site immediately
+- Public cards show status badges; the catalog's default sort is now "Featured" (featured, then pinned order, then downloads)
+- While `API_URL` is set, Hugging Face items are no longer merged in the web app; that moves to the API sync in Phase 5
+
+**Phase 3 — done (2026-11-11)**
+- `/admin` (only when `ADMIN_DEV_MODE=true`): Overview, one list per section, create/edit forms for all 4 types, Featured & order, Tags & labels
+- Lists: status tabs (Active / Drafts / Published / Archived / All), search, tag/label/badge/featured filters, sorting, pagination, row actions (publish, unpublish, archive, restore, delete forever for archived items)
+- Editor: grouped fields per type, benchmarks editor, links, badges, featured, content date, tags with suggestions, internal labels, lifecycle buttons, history with compare + restore, conflict banner on stale saves, sticky save bar, Ctrl/Cmd+S, unsaved-changes warning
+- `next build` passes (Cache Components / partial prerendering)
+
+**Phase 4 — done (2026-11-11)**
+- Media library (`/admin/media`): upload (JPEG/PNG/WebP/GIF ≤ 10 MB, checked with Pillow, SVG refused), alt text, usage list, delete blocked while in use
+- Cover images on items (shown on model and demo cards)
+- Site settings (`/admin/site`): name, logo mark, tagline, author, GitHub URL, license, section names
+- Landing copy (`/admin/landing`): hero + background scenes, "Runs on" strip, manifesto, what-is, try-it (+ photo), quote, feature cards, open-source call-out, FAQ, footer. Each block saves on its own, with history, restore and "Reset to built-in". Text supports `*orange*`, `_dim_`, `~underline~`, `` `code` ``, `{placeholders}`
+- Defaults live in `web/src/lib/content/defaults.ts`; the API stores only saved overrides
+
+**Phase 5 — done (2026-11-12)**
+- Hugging Face sync (`/admin/sync`): imports models → Checkpoints, datasets → Corpus, Spaces → Playground as **drafts**; on synced items, fields follow Hugging Face until an admin edits them (`edited_fields`), and the editor's "Hugging Face sync" card hands a field back ("Use HF value"). Live stats (downloads, likes, stars, versions, dates) refresh on every item, local ones too, without a new version or "edited" time. Items gone from Hugging Face are reported, never deleted. One run at a time (advisory lock); every run is kept with its report
+- Settings (Owner): accounts + what to sync, stored as site key `sync` (never in the public API). Tokens stay in `api/.env` (`HF_TOKEN`, `GITHUB_TOKEN`). Scheduled runs: `python -m scripts.sync --quiet` from cron
+- Toolkit stars / PyPI + npm versions moved from the web app into the sync (the web app only fetches them in static mode)
+- Bulk actions: checkboxes (shift-click ranges) → publish, archive, restore, unpublish, feature, tags, internal labels, badges, delete forever (Owner, archived only). Per-item results; items that can't take an action are listed, the rest still go through
+- CSV: "Export CSV" per section; "Import CSV" previews every row (new draft / update / no change / error) and applies all rows or none. Matches on slug, changes only the columns in the file, neutralises spreadsheet formulas
+- Overview: downloads / likes / stars totals with 30-day change, downloads chart (from daily `stat_snapshots`, carried forward over gaps), most downloaded, rising, needs-attention list, last sync
+- Activity (`/admin/activity`): filters by action, area, person, dates and item name; expandable before → after diffs
+- Version compare + restore was already done in Phase 3
+- 26 new API tests (74 total); remote APIs are faked in tests
+
+**Phase 6 — done (2026-11-11), except real GitHub/Google keys**
+- Sign-in: email + password (argon2, lockout after 5 failures / 15 min), GitHub and Google (PKCE, verified email, invite-only); 30-day sliding sessions in an httpOnly cookie
+- Team (`/admin/team`, Owners): invite links (7 days), roles Owner / Editor / Viewer, disable, sign out, password-reset links (24 h); the last Owner can't be removed
+- Account (`/admin/account`): name, password, connect/disconnect GitHub/Google, sign out everywhere
+- Roles enforced by the API on every route and reflected in the UI
+- Deployment: `api/Dockerfile`, `web/Dockerfile` (standalone), `docker-compose.prod.yml` with Caddy HTTPS, `docs/deploy.md`
+- Dev mode (`ADMIN_DEV_MODE`) removed; first Owner via `python -m scripts.create_owner`
+
+**Public accounts — done (2026-11-11), awaiting your browser test**
+- `/signup` and `/login` work: email + password (confirmation email), GitHub, Google. New people get a `member` role with no admin access; the team still joins by invite
+- One login page for everyone; team members land in `/admin`, members on `/account`. `/admin/login` redirects to `/login`
+- `/forgot-password` → email with a reset link (`/reset/<token>`); `/verify/<token>` confirms the address with one click
+- `/account`: saved items, recently viewed (counted when an item's drawer opens), profile, password, connected accounts, sign out everywhere, delete account (members)
+- Drawer "☆ Save" button; navbar avatar menu (Saved, Account, Admin panel for the team, Sign out)
+- Email over SMTP (Resend / Postmark / Gmail…); without SMTP_HOST, emails are saved to `api/outbox/*.eml`
+- Owners see site members on the Team page and can give them a team role
+- Security: unconfirmed password accounts are taken over safely by a verified Google/GitHub sign-in; forgot-password doesn't reveal which emails exist; email and sign-up rate limits
+
+Notes: with `API_URL` set, library GitHub stars and PyPI/npm versions come from the sync job; `web/src/lib/libraries.ts` only fetches them in static mode.
 
 ## 8. Open items (decide later)
 
 - Hosting target (affects media bucket and where the API runs; see Phase 6)
-- Transactional email provider for invites and password reset (Resend, Postmark, SES)
-- Whether public visitor accounts (`/login`, `/signup`) become real; for now they stay UI-only
+- SMTP credentials for real email (code is ready; dev writes to api/outbox)
+- GitHub / Google OAuth keys (code is in place, untested against the real providers)

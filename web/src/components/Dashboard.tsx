@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import CommandPalette from "@/components/CommandPalette";
 import DatasetsSection from "@/components/DatasetsSection";
 import DemosSection from "@/components/DemosSection";
@@ -17,6 +17,18 @@ export default function Dashboard({ hub }: { hub: Hub }) {
   const [selected, setSelected] = useState<Selection | null>(null);
   const close = useCallback(() => setSelected(null), []);
   const selectModel = useCallback((m: MLModel) => setSelected({ type: "model", item: m }), []);
+  // Deep link: /?open=model:owner/name (used by "Saved" and "Recently viewed" on /account)
+  useEffect(() => {
+    const open = new URLSearchParams(window.location.search).get("open");
+    if (!open) return;
+    const [type, ...rest] = open.split(":");
+    const id = rest.join(":").toLowerCase();
+    const lists = { model: hub.models, dataset: hub.datasets, demo: hub.demos, library: hub.libraries } as const;
+    const item = (lists[type as keyof typeof lists] as { id: string }[] | undefined)?.find((i) => i.id.toLowerCase() === id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of the URL after hydration
+    if (item) setSelected({ type, item } as Selection);
+  }, [hub]);
+
   const demoModelIds = useMemo(
     () => new Set(hub.demos.flatMap((d) => d.models.map((m) => m.toLowerCase()))),
     [hub.demos],

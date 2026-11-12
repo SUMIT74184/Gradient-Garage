@@ -29,6 +29,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, new_uuid, str_enum_values
+from app.models.media import Media
 
 
 class ContentType(str, enum.Enum):
@@ -149,6 +150,9 @@ class ContentItem(TimestampMixin, Base):
     # Fields an admin edited on an HF-synced item; sync never overwrites these
     edited_fields: Mapped[list[str]] = mapped_column(StrList, default=list)
     hf_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    cover_media_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("media.id", ondelete="SET NULL"))
+    cover: Mapped[Media | None] = relationship(lazy="selectin")
 
     # The "updated" date shown publicly (from HF lastModified, or set by hand)
     content_date: Mapped[date | None] = mapped_column(Date)

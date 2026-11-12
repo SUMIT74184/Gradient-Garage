@@ -1,7 +1,9 @@
 import { Logo } from "@/components/Navbar";
-import { site } from "@/config/site";
+import { fill } from "@/components/Rich";
+import type { SiteContent } from "@/lib/content/defaults";
 
-export default function Footer() {
+export default function Footer({ content }: { content: SiteContent }) {
+  const { site } = content;
   return (
     <footer className="glow-warm mt-24 border-t border-line">
       <div className="mx-auto flex max-w-[1400px] flex-col gap-4 px-6 py-10 text-sm text-muted sm:flex-row sm:items-center sm:justify-between md:px-12">
@@ -10,7 +12,7 @@ export default function Footer() {
           <span className="display text-xl text-fg">{site.name}</span>
         </span>
         <p>
-          {site.license}-licensed. Weights are distributed under each model&apos;s own license.
+          {fill(content.landing.footer.note, { name: site.name, license: site.license, author: site.author })}
         </p>
         <a href={site.githubUrl} target="_blank" rel="noopener" className="hover:text-fg">
           GitHub ↗

@@ -43,9 +43,7 @@ def test_tag_rename_and_merge(client):
     assert r.json()["slug"] == "large-language-model"
 
 
-def test_admin_hidden_when_dev_mode_off(client, monkeypatch):
-    from app.config import get_settings
-
-    monkeypatch.setattr(get_settings(), "admin_dev_mode", False)
-    assert client.get(f"{ADMIN}/content").status_code == 404
-    assert client.get("/api/v1/public/hub").status_code == 200
+def test_admin_requires_sign_in(anon):
+    assert anon.get(f"{ADMIN}/content").status_code == 401
+    assert anon.get(f"{ADMIN}/content", headers={"Authorization": "Bearer nope"}).status_code == 401
+    assert anon.get("/api/v1/public/hub").status_code == 200

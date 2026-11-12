@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { SECTIONS } from "@/config/sections";
+import { useMember } from "@/components/MemberProvider";
+import { useSections } from "@/components/SiteContentProvider";
 import type { Selection } from "@/lib/types";
 
 export type ItemType = Selection["type"];
 
-export const TYPE_LABEL: Record<ItemType, string> = {
-  model: SECTIONS.model.item,
-  library: SECTIONS.library.item,
-  dataset: SECTIONS.dataset.item,
-  demo: SECTIONS.demo.item,
-};
+/** Singular name per item type ("Checkpoint", "Corpus"…), as set in the admin panel. */
+export function useTypeLabel(): Record<ItemType, string> {
+  const s = useSections();
+  return { model: s.model.item, library: s.library.item, dataset: s.dataset.item, demo: s.demo.item };
+}
 
 /** One line glyph per kind of item, used in tiles, the palette and drawers. */
 export function TypeIcon({ type, className = "size-5" }: { type: ItemType; className?: string }) {
@@ -127,11 +127,11 @@ const LINK_LABEL: Record<string, string> = {
   npm: "npm",
   docs: "Docs",
   paper: "Paper",
-  demo: SECTIONS.demo.label,
 };
 
 /** Row of outbound links; the first one is the primary button. */
 export function LinkButtons({ links }: { links: Record<string, string | undefined> }) {
+  const sections = useSections();
   const entries = Object.entries(links).filter(([, url]) => url) as [string, string][];
   if (!entries.length) return null;
   return (
@@ -148,7 +148,7 @@ export function LinkButtons({ links }: { links: Record<string, string | undefine
               : "rounded-full border border-line-strong px-4 py-2 text-sm font-semibold text-fg hover:bg-fg/5"
           }
         >
-          {LINK_LABEL[name] ?? name} ↗
+          {(name === "demo" ? sections.demo.label : LINK_LABEL[name]) ?? name} ↗
         </a>
       ))}
     </div>
@@ -230,24 +230,70 @@ export function FactList({ facts }: { facts: [string, string | undefined][] }) {
 }
 
 /** Side drawer: overlay, sticky header, Escape to close, focus return, scroll lock. */
+/** Save / unsave the open item; asks visitors to sign in first. */
+function SaveButton({ type, id }: { type: ItemType; id: string }) {
+  const { user, isSaved, toggleSaved } = useMember();
+  const saved = isSaved(type, id);
+  const [hint, setHint] = useState("");
+  if (user === undefined) return null;
+  if (!user) {
+    return (
+      <a
+        href={`/login?next=${encodeURIComponent(`/?open=${type}:${id}`)}`}
+        className="rounded-lg border border-line px-2.5 py-1 text-xs text-muted transition hover:text-fg"
+        title="Sign in to save items"
+      >
+        ☆ Save
+      </a>
+    );
+  }
+  return (
+    <button
+      type="button"
+      aria-pressed={saved}
+      onClick={async () => {
+        const r = await toggleSaved(type, id);
+        setHint(r === "error" ? "Couldn't save" : r === "signed-out" ? "Sign in again" : "");
+      }}
+      title={hint || (saved ? "Remove from saved" : "Save to your account")}
+      className={`rounded-lg border px-2.5 py-1 text-xs transition ${
+        saved ? "border-gold-400/40 bg-gold-400/10 text-gold-300" : "border-line text-muted hover:text-fg"
+      }`}
+    >
+      {saved ? "★ Saved" : "☆ Save"}
+    </button>
+  );
+}
+
 export function DrawerShell({
   type,
   title,
   subtitle,
   badge,
   scrollKey,
+  itemId,
   onClose,
   children,
 }: {
   /** When this changes (another item opened in place), scroll back to the top */
   scrollKey?: string;
   type: ItemType;
+  /** Public id of the item, for Save and "recently viewed" */
+  itemId?: string;
   title: string;
   subtitle?: string;
   badge?: ReactNode;
   onClose: () => void;
   children: ReactNode;
 }) {
+  const typeLabel = useTypeLabel();
+  const { recordView } = useMember();
+
+  // Count a view when an item opens (signed-in visitors only; no-op otherwise)
+  useEffect(() => {
+    if (itemId) recordView(type, itemId);
+  }, [type, itemId, recordView]);
+
   const closeRef = useRef<HTMLButtonElement>(null);
   const asideRef = useRef<HTMLElement>(null);
 
@@ -277,7 +323,7 @@ export function DrawerShell({
           <div className="min-w-0">
             <p className="mb-1.5 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-brand">
               <TypeIcon type={type} className="size-3.5" />
-              {TYPE_LABEL[type]}
+              {typeLabel[type]}
             </p>
             <div className="flex items-center gap-2">
               <h2 id="drawer-title" className="truncate text-xl font-semibold text-fg">
@@ -287,6 +333,8 @@ export function DrawerShell({
             </div>
             {subtitle && <p className="mt-1 truncate font-mono text-xs text-muted">{subtitle}</p>}
           </div>
+          <div className="flex shrink-0 items-center gap-2">
+          {itemId && <SaveButton type={type} id={itemId} />}
           <button
             ref={closeRef}
             type="button"
@@ -296,6 +344,7 @@ export function DrawerShell({
           >
             ✕
           </button>
+          </div>
         </header>
         <div className="space-y-8 px-6 py-6">{children}</div>
       </aside>

@@ -2,8 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { createItem, transitionItem, updateItem } from "@/app/admin/actions";
+import { createItem, resetOverrides, transitionItem, updateItem } from "@/app/admin/actions";
 import { BADGE_META } from "@/components/StatusBadges";
+import { useCan } from "@/components/admin/AdminUser";
+import { ImageField } from "@/components/admin/MediaPicker";
 import RevisionsPanel from "@/components/admin/RevisionsPanel";
 import { BenchmarksEditor, ChipsInput, Field } from "@/components/admin/fields";
 import { Card, LabelChip, StatusPill, buttonClass, formatWhen, inputClass } from "@/components/admin/ui";
@@ -80,12 +82,15 @@ export default function ItemEditor({
 }) {
   const router = useRouter();
   const isNew = !initialItem;
+  const canEdit = useCan("editor");
   const [item, setItem] = useState(initialItem);
   const [saved, setSaved] = useState<ItemValues>(() => (initialItem ? pick(type, initialItem) : emptyValues(type)));
   const [values, setValues] = useState<ItemValues>(saved);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [banner, setBanner] = useState<Banner>(null);
   const [pending, start] = useTransition();
+  // Preview URL for the cover; the form itself only stores the media id
+  const [coverUrl, setCoverUrl] = useState<string | null>(initialItem?.cover?.url ?? null);
 
   const savedNorm = useMemo(() => normalize(type, saved), [type, saved]);
   const currentNorm = useMemo(() => normalize(type, values), [type, values]);
@@ -97,7 +102,12 @@ export default function ItemEditor({
 
   const set = (key: string, v: unknown) => {
     setValues((prev) => ({ ...prev, [key]: v }));
-    if (errors[key]) setErrors(({ [key]: _, ...rest }) => rest);
+    if (errors[key])
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
   };
 
   // Warn before leaving with unsaved edits
@@ -165,6 +175,13 @@ export default function ItemEditor({
       applyResult(res, action === "publish" ? "Published. It's live on the site." : `Done: ${action}.`);
     });
 
+  const releaseField = (field: string) =>
+    start(async () => {
+      setBanner(null);
+      const res = await resetOverrides(item!.id, [field], item!.version);
+      applyResult(res, "Handed back to Hugging Face. It takes the Hugging Face value on the next sync.");
+    });
+
   const reloadLatest = () => {
     // Drop local edits and pull the current server version
     window.location.reload();
@@ -175,7 +192,7 @@ export default function ItemEditor({
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
-        if (dirty && !pending) save();
+        if (canEdit && dirty && !pending) save();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -253,6 +270,10 @@ export default function ItemEditor({
       }}
       className="pb-24"
     >
+      {!canEdit && (
+        <p className="mb-6 rounded-lg border border-line bg-fg/5 px-4 py-3 text-sm text-soft">You have view-only access (Viewer role).</p>
+      )}
+      <fieldset disabled={!canEdit} className="contents">
       {banner && (
         <div
           role={banner.tone === "success" ? "status" : "alert"}
@@ -372,6 +393,39 @@ export default function ItemEditor({
             </Card>
           )}
 
+          {item?.source === "huggingface" && (
+            <Card title="Hugging Face sync">
+              <p className="text-xs text-muted">
+                Last synced {item.hfSyncedAt ? formatWhen(item.hfSyncedAt) : "never"}. Stats always refresh; other fields follow Hugging Face until you edit them.
+              </p>
+              {item.editedFields.length === 0 ? (
+                <p className="mt-3 text-xs text-soft">No overrides: every synced field follows Hugging Face.</p>
+              ) : (
+                <>
+                  <p className="mb-1.5 mt-3 text-xs font-medium text-soft">Your edits (sync leaves these alone)</p>
+                  <ul className="space-y-1">
+                    {item.editedFields.map((f) => (
+                      <li key={f} className="flex items-center justify-between gap-2 text-xs">
+                        <span className="font-mono text-soft">{f.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())}</span>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            disabled={pending || dirty}
+                            title={dirty ? "Save or discard your changes first" : "Use the Hugging Face value from the next sync on"}
+                            onClick={() => releaseField(f)}
+                            className={`${buttonClass.ghost} !px-2 !py-1 text-xs`}
+                          >
+                            Use HF value
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </Card>
+          )}
+
           <Card title="Display">
             <label className="flex items-start gap-2.5 text-sm text-soft">
               <input type="checkbox" checked={values.featured} onChange={(e) => set("featured", e.target.checked)} className="mt-0.5 size-4 accent-[var(--color-brand)]" />
@@ -404,6 +458,20 @@ export default function ItemEditor({
                 <input id="f-date" type="date" value={values.contentDate ?? ""} onChange={(e) => set("contentDate", e.target.value || null)} className={inputClass} />
               </Field>
             </div>
+          </Card>
+
+          <Card title="Cover image">
+            <ImageField
+              value={{ id: values.coverMediaId, url: values.coverMediaId ? coverUrl : null }}
+              onChange={(m) => {
+                set("coverMediaId", m?.id ?? null);
+                setCoverUrl(m?.url ?? null);
+              }}
+            />
+            <p className="mt-2 text-xs text-muted">
+              {type === "model" || type === "demo" ? "Shown on the card instead of the generated art." : "Stored with the item; this section's cards don't show covers yet."}
+            </p>
+            {errors.coverMediaId && <p className="mt-1 text-xs text-red-300">{errors.coverMediaId}</p>}
           </Card>
 
           <Card title="Tags">
@@ -445,6 +513,8 @@ export default function ItemEditor({
         </div>
       </div>
 
+      </fieldset>
+      {canEdit && (
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-stone/95 backdrop-blur lg:left-60">
         <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-8">
           <p className="text-sm text-muted" aria-live="polite">
@@ -456,7 +526,7 @@ export default function ItemEditor({
           </p>
           <div className="flex gap-2">
             {!isNew && dirty && (
-              <button type="button" onClick={() => { setValues(saved); setErrors({}); }} disabled={pending} className={buttonClass.ghost}>
+              <button type="button" onClick={() => { setValues(saved); setErrors({}); setCoverUrl(item?.cover?.url ?? null); }} disabled={pending} className={buttonClass.ghost}>
                 Discard
               </button>
             )}
@@ -466,6 +536,7 @@ export default function ItemEditor({
           </div>
         </div>
       </div>
+      )}
     </form>
   );
 }

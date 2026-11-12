@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import SectionHeader from "@/components/SectionHeader";
+import { useSections } from "@/components/SiteContentProvider";
 import StatusBadges from "@/components/StatusBadges";
 import { SECTIONS } from "@/config/sections";
 import { EmptyState, Pill } from "@/components/ui";
@@ -56,6 +57,7 @@ export default function DatasetsSection({
   models: MLModel[];
   onSelect: (s: Selection) => void;
 }) {
+  const sections = useSections();
   const [modality, setModality] = useState<Modality | "all">("all");
   const modalities = useMemo(() => [...new Set(datasets.map((d) => d.modality))], [datasets]);
   const visible = datasets.filter((d) => modality === "all" || d.modality === modality);
@@ -73,7 +75,7 @@ export default function DatasetsSection({
   return (
     <section id={SECTIONS.dataset.id} className="scroll-mt-24">
       <SectionHeader
-        eyebrow={SECTIONS.dataset.label}
+        eyebrow={sections.dataset.label}
         title="The data,"
         accent="in the open."
         description="Data I collected and labelled, with the checkpoints trained on each set."

@@ -1,152 +1,241 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useActionState, useState } from "react";
+import { confirmEmail, login, requestPasswordReset, resetPassword, signup, type FormState } from "@/app/admin/auth-actions";
 import { GitHubIcon } from "@/components/Navbar";
 
-type Mode = "login" | "signup";
-type Provider = "google" | "github";
-
-const COPY = {
-  login: {
-    title: "Welcome back",
-    subtitle: "Log in to save models, track evals and pull private weights.",
-    submit: "Log in",
-    switchText: "New here?",
-    switchLabel: "Create an account",
-    switchHref: "/signup",
-  },
-  signup: {
-    title: "Create your account",
-    subtitle: "Free forever. Bookmark models, compare benchmarks, publish fine-tunes.",
-    submit: "Create account",
-    switchText: "Already have an account?",
-    switchLabel: "Log in",
-    switchHref: "/login",
-  },
-} as const;
-
-const PROVIDER_NAME: Record<Provider, string> = { google: "Google", github: "GitHub" };
-
 const inputClass =
-  "w-full rounded-xl border border-line bg-surface-2/60 px-3.5 py-2.5 text-sm text-fg placeholder:text-muted outline-none transition-colors focus:border-brand/60 focus:bg-surface-2";
+  "w-full rounded-xl border border-line bg-surface-2/60 px-3.5 py-2.5 text-sm text-fg placeholder:text-muted outline-none transition-colors focus:border-brand/60 focus:bg-surface-2 aria-[invalid=true]:border-red-400/60";
+const primary =
+  "mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 font-medium tracking-tight text-brand-fg transition-colors hover:bg-brand-hover disabled:opacity-60";
 
-/**
- * Login / sign-up card. UI only for now: OAuth and email submission show a notice
- * instead of calling a provider.
- */
-export default function AuthForm({ mode }: { mode: Mode }) {
-  const copy = COPY[mode];
-  const [notice, setNotice] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+function Notice({ state, initial }: { state: FormState; initial?: string }) {
+  const msg = state?.error ?? initial;
+  return msg ? (
+    <p role="alert" className="mb-4 rounded-xl border border-red-400/30 bg-red-400/10 px-3.5 py-2.5 text-sm text-red-200">
+      {msg}
+    </p>
+  ) : null;
+}
 
-  const onProvider = (p: Provider) =>
-    setNotice(`${PROVIDER_NAME[p]} sign-in isn't connected yet. This page is a UI preview.`);
+function FieldError({ msg }: { msg?: string }) {
+  return msg ? <span className="mt-1 block text-xs text-red-300">{msg}</span> : null;
+}
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setNotice("Email sign-in isn't connected yet. This page is a UI preview.");
-  };
-
+function Password({ name, label, autoComplete, error, minLength, extra }: { name: string; label: string; autoComplete: string; error?: string; minLength?: number; extra?: React.ReactNode }) {
+  const [show, setShow] = useState(false);
   return (
-    <div className="w-full max-w-[400px]">
-      <h1 className="display text-3xl text-fg md:text-4xl">{copy.title}</h1>
-      <p className="mt-2 text-sm text-muted">{copy.subtitle}</p>
+    <label className="flex flex-col gap-1.5 text-sm text-soft">
+      <span className="flex items-center justify-between">
+        {label}
+        {extra}
+      </span>
+      <span className="relative">
+        <input name={name} type={show ? "text" : "password"} autoComplete={autoComplete} required minLength={minLength} aria-invalid={!!error} className={`${inputClass} pe-16`} />
+        <button type="button" onClick={() => setShow((v) => !v)} className="absolute inset-y-0 end-3 my-auto h-fit text-xs text-muted transition-colors hover:text-fg">
+          {show ? "Hide" : "Show"}
+        </button>
+      </span>
+      <FieldError msg={error} />
+    </label>
+  );
+}
 
+/** GitHub / Google buttons, only for providers that are configured. */
+export function Providers({ github, google, next }: { github: boolean; google: boolean; next?: string }) {
+  if (!github && !google) return null;
+  const q = next ? `?next=${encodeURIComponent(next)}` : "";
+  return (
+    <>
       <div className="mt-8 flex flex-col gap-3">
-        <button
-          type="button"
-          onClick={() => onProvider("google")}
-          className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-fg px-5 py-3 text-sm font-medium tracking-tight text-ink transition-colors hover:bg-white"
-        >
-          <GoogleIcon className="size-[18px]" />
-          Continue with Google
-        </button>
-        <button
-          type="button"
-          onClick={() => onProvider("github")}
-          className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-line bg-surface-2 px-5 py-3 text-sm font-medium tracking-tight text-fg transition-colors hover:bg-surface"
-        >
-          <GitHubIcon className="size-[18px]" />
-          Continue with GitHub
-        </button>
+        {google && (
+          <a href={`/auth/google${q}`} className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-fg px-5 py-3 text-sm font-medium tracking-tight text-ink transition-colors hover:bg-white">
+            <GoogleIcon className="size-[18px]" />
+            Continue with Google
+          </a>
+        )}
+        {github && (
+          <a href={`/auth/github${q}`} className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-line bg-surface-2 px-5 py-3 text-sm font-medium tracking-tight text-fg transition-colors hover:bg-surface">
+            <GitHubIcon className="size-[18px]" />
+            Continue with GitHub
+          </a>
+        )}
       </div>
-
       <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wider text-muted">
         <span className="h-px flex-1 bg-line" />
         or with email
         <span className="h-px flex-1 bg-line" />
       </div>
+    </>
+  );
+}
 
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        {mode === "signup" && (
-          <label className="flex flex-col gap-1.5 text-sm text-soft">
-            Name
-            <input name="name" type="text" autoComplete="name" required placeholder="Ada Lovelace" className={inputClass} />
-          </label>
-        )}
+function Heading({ title, subtitle }: { title: string; subtitle?: React.ReactNode }) {
+  return (
+    <>
+      <h1 className="display text-3xl text-fg md:text-4xl">{title}</h1>
+      {subtitle && <p className="mt-2 text-sm text-muted">{subtitle}</p>}
+    </>
+  );
+}
+
+type ProviderFlags = { github: boolean; google: boolean };
+
+export function LoginCard({ next, error, providers }: { next?: string; error?: string; providers: ProviderFlags }) {
+  const [state, action, pending] = useActionState(login, null);
+  return (
+    <>
+      <Heading title="Welcome back" subtitle="Log in to your saved models and recently viewed." />
+      <Providers {...providers} next={next} />
+      <form action={action} className={`flex flex-col gap-4 ${providers.github || providers.google ? "" : "mt-8"}`}>
+        <Notice state={state} initial={state ? undefined : error} />
+        <input type="hidden" name="next" value={next ?? ""} />
         <label className="flex flex-col gap-1.5 text-sm text-soft">
           Email
           <input name="email" type="email" autoComplete="email" required placeholder="you@example.com" className={inputClass} />
         </label>
-        <label className="flex flex-col gap-1.5 text-sm text-soft">
-          <span className="flex items-center justify-between">
-            Password
-            {mode === "login" && (
-              <button
-                type="button"
-                onClick={() => setNotice("Password reset isn't connected yet. This page is a UI preview.")}
-                className="text-xs text-muted transition-colors hover:text-brand"
-              >
-                Forgot password?
-              </button>
-            )}
-          </span>
-          <span className="relative">
-            <input
-              name="password"
-              type={showPassword ? "text" : "password"}
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-              required
-              minLength={mode === "signup" ? 8 : undefined}
-              placeholder={mode === "signup" ? "At least 8 characters" : "••••••••"}
-              className={`${inputClass} pe-16`}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              className="absolute inset-y-0 end-3 my-auto h-fit text-xs text-muted transition-colors hover:text-fg"
-            >
-              {showPassword ? "Hide" : "Show"}
-            </button>
-          </span>
-        </label>
-
-        <button
-          type="submit"
-          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 font-medium tracking-tight text-brand-fg transition-colors hover:bg-brand-hover"
-        >
-          {copy.submit}
+        <Password
+          name="password"
+          label="Password"
+          autoComplete="current-password"
+          extra={
+            <Link href="/forgot-password" className="text-xs text-muted transition-colors hover:text-brand">
+              Forgot password?
+            </Link>
+          }
+        />
+        <button type="submit" disabled={pending} className={primary}>
+          {pending ? "Logging in…" : "Log in"}
         </button>
       </form>
-
-      <p role="status" aria-live="polite" className={`mt-4 min-h-5 text-center text-xs text-gold-300 ${notice ? "" : "invisible"}`}>
-        {notice}
-      </p>
-
-      <p className="mt-4 text-center text-sm text-muted">
-        {copy.switchText}{" "}
-        <Link href={copy.switchHref} className="font-medium text-fg underline-offset-4 hover:text-brand hover:underline">
-          {copy.switchLabel}
+      <p className="mt-6 text-center text-sm text-muted">
+        New here?{" "}
+        <Link href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"} className="font-medium text-fg underline-offset-4 hover:text-brand hover:underline">
+          Create an account
         </Link>
       </p>
+    </>
+  );
+}
 
-      {mode === "signup" && (
-        <p className="mt-6 text-center text-xs text-muted">
-          By creating an account you agree to the Terms and Privacy Policy.
+export function SignupCard({ next, providers }: { next?: string; providers: ProviderFlags }) {
+  const [state, action, pending] = useActionState(signup, null);
+  const f = state?.fields ?? {};
+  return (
+    <>
+      <Heading title="Create your account" subtitle="Free. Save models and datasets, and pick up where you left off." />
+      <Providers {...providers} next={next} />
+      <form action={action} className={`flex flex-col gap-4 ${providers.github || providers.google ? "" : "mt-8"}`}>
+        <Notice state={state} />
+        <input type="hidden" name="next" value={next ?? ""} />
+        <label className="flex flex-col gap-1.5 text-sm text-soft">
+          Name
+          <input name="name" type="text" autoComplete="name" required placeholder="Ada Lovelace" className={inputClass} />
+        </label>
+        <label className="flex flex-col gap-1.5 text-sm text-soft">
+          Email
+          <input name="email" type="email" autoComplete="email" required placeholder="you@example.com" aria-invalid={!!f.email} className={inputClass} />
+          <FieldError msg={f.email} />
+        </label>
+        <Password name="password" label="Password" autoComplete="new-password" minLength={10} error={f.password} />
+        <p className="-mt-2 text-xs text-muted">At least 10 characters. We&apos;ll email you a link to confirm your address.</p>
+        <button type="submit" disabled={pending} className={primary}>
+          {pending ? "Creating account…" : "Create account"}
+        </button>
+      </form>
+      <p className="mt-6 text-center text-sm text-muted">
+        Already have an account?{" "}
+        <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="font-medium text-fg underline-offset-4 hover:text-brand hover:underline">
+          Log in
+        </Link>
+      </p>
+    </>
+  );
+}
+
+export function ForgotCard() {
+  const [state, action, pending] = useActionState(requestPasswordReset, null);
+  if (state?.done) {
+    return (
+      <>
+        <Heading title="Check your email" subtitle="If that address has an account, a reset link is on its way. It works for 24 hours." />
+        <p className="mt-6 text-sm text-muted">
+          Nothing arrived? Check spam, or{" "}
+          <Link href="/forgot-password" className="text-fg hover:text-brand">
+            try again
+          </Link>
+          . Signed up with GitHub or Google? Use that button on the{" "}
+          <Link href="/login" className="text-fg hover:text-brand">
+            log in page
+          </Link>
+          .
         </p>
-      )}
-    </div>
+      </>
+    );
+  }
+  return (
+    <>
+      <Heading title="Reset your password" subtitle="Enter your email and we'll send you a link." />
+      <form action={action} className="mt-8 flex flex-col gap-4">
+        <Notice state={state} />
+        <label className="flex flex-col gap-1.5 text-sm text-soft">
+          Email
+          <input name="email" type="email" autoComplete="email" required autoFocus className={inputClass} />
+        </label>
+        <button type="submit" disabled={pending} className={primary}>
+          {pending ? "Sending…" : "Send reset link"}
+        </button>
+      </form>
+      <p className="mt-6 text-center text-sm text-muted">
+        <Link href="/login" className="hover:text-fg">
+          ← Back to log in
+        </Link>
+      </p>
+    </>
+  );
+}
+
+export function ResetCard({ token, email }: { token: string; email: string }) {
+  const [state, action, pending] = useActionState(resetPassword.bind(null, token), null);
+  const f = state?.fields ?? {};
+  return (
+    <>
+      <Heading title="Choose a new password" subtitle={<>for <span className="text-fg">{email}</span>. You&apos;ll be signed out everywhere else.</>} />
+      <form action={action} className="mt-8 flex flex-col gap-4">
+        <Notice state={state} />
+        <Password name="password" label="New password" autoComplete="new-password" minLength={10} error={f.password} />
+        <Password name="confirm" label="Repeat it" autoComplete="new-password" minLength={10} error={f.confirm} />
+        <button type="submit" disabled={pending} className={primary}>
+          {pending ? "Saving…" : "Save and log in"}
+        </button>
+      </form>
+    </>
+  );
+}
+
+export function VerifyCard({ token }: { token: string }) {
+  const [state, action, pending] = useActionState(confirmEmail.bind(null, token), null);
+  if (state?.done) {
+    return (
+      <>
+        <Heading title="Email confirmed" subtitle="Thanks! Your address is confirmed." />
+        <Link href="/account" className={`${primary} mt-8`}>
+          Go to your account
+        </Link>
+      </>
+    );
+  }
+  return (
+    <>
+      <Heading title="Confirm your email" subtitle="One click and you're done." />
+      <form action={action} className="mt-8 flex flex-col gap-4">
+        <Notice state={state} />
+        <button type="submit" disabled={pending} className={primary}>
+          {pending ? "Confirming…" : "Confirm my email"}
+        </button>
+      </form>
+    </>
   );
 }
 

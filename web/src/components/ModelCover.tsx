@@ -61,6 +61,21 @@ function Glyph({ task }: { task: string }) {
 
 /** Generated cover art: dot grid, a warm glow placed by the model id, and a task glyph. */
 export default function ModelCover({ model }: { model: MLModel }) {
+  if (model.cover) {
+    return (
+      <div className="relative h-28 overflow-hidden rounded-xl border border-line bg-surface-2">
+        {/* eslint-disable-next-line @next/next/no-img-element -- admin uploads, already sized by the API */}
+        <img
+          src={model.cover.url}
+          alt={model.cover.alt}
+          width={model.cover.width}
+          height={model.cover.height}
+          loading="lazy"
+          className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+      </div>
+    );
+  }
   const h = hash(model.id);
   const x = 20 + (h % 60);
   const y = 10 + ((h >> 4) % 60);

@@ -3,6 +3,7 @@ from fastapi import APIRouter, Response
 from app.deps import Db
 from app.models import ContentType
 from app.services.content import published_items
+from app.services import site as site_svc
 from app.services.serialize import public_out
 
 router = APIRouter(prefix="/public", tags=["public"])
@@ -23,3 +24,10 @@ def hub(db: Db, response: Response) -> dict[str, list[dict]]:
         out[HUB_KEYS[item.type]].append(public_out(item))
     response.headers["Cache-Control"] = "public, max-age=30, stale-while-revalidate=300"
     return out
+
+
+@router.get("/site")
+def site(db: Db, response: Response) -> dict:
+    """Saved site settings, section names and landing copy. Missing keys mean "use the default"."""
+    response.headers["Cache-Control"] = "public, max-age=30, stale-while-revalidate=300"
+    return site_svc.public_values(db)

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import ModelCard from "@/components/ModelCard";
 import SectionHeader from "@/components/SectionHeader";
+import { useSections } from "@/components/SiteContentProvider";
 import { DOMAINS, SECTIONS } from "@/config/sections";
 import { formatTask } from "@/lib/format";
 import { byCuration } from "@/lib/rank";
@@ -31,6 +32,7 @@ export default function ModelCatalog({
   demoModelIds?: Set<string>;
   onSelect: (m: MLModel) => void;
 }) {
+  const sections = useSections();
   const [query, setQuery] = useState("");
   const [task, setTask] = useState("all");
   const [domain, setDomain] = useState("all");
@@ -85,7 +87,7 @@ export default function ModelCatalog({
   return (
     <section id={SECTIONS.model.id} className="scroll-mt-24">
       <SectionHeader
-        eyebrow={SECTIONS.model.label}
+        eyebrow={sections.model.label}
         title="Every"
         accent="checkpoint."
         description="Everything I trained or fine-tuned. Click a card for benchmarks, its corpus, usage and the playground."

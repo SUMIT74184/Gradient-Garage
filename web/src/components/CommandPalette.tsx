@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { TYPE_LABEL, TypeIcon } from "@/components/ui";
+import { TypeIcon, useTypeLabel } from "@/components/ui";
 import { SECTION_ORDER, domainOf } from "@/config/sections";
 import { formatCompact, formatTask } from "@/lib/format";
 import type { Hub, Selection } from "@/lib/types";
@@ -45,6 +45,7 @@ function entries(hub: Hub): Entry[] {
 
 /** ⌘K / Ctrl+K search across Checkpoints, Playground, Corpus and Toolkit. Opens from the navbar via OPEN_SEARCH_EVENT. */
 export default function CommandPalette({ hub, onSelect }: { hub: Hub; onSelect: (s: Selection) => void }) {
+  const typeLabel = useTypeLabel();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
@@ -63,6 +64,8 @@ export default function CommandPalette({ hub, onSelect }: { hub: Hub; onSelect: 
     };
     document.addEventListener("keydown", onKey);
     window.addEventListener(OPEN_SEARCH_EVENT, show);
+    // Arriving from another page's search button: /?search=1
+    if (new URLSearchParams(window.location.search).get("search") === "1") show();
     return () => {
       document.removeEventListener("keydown", onKey);
       window.removeEventListener(OPEN_SEARCH_EVENT, show);
@@ -136,7 +139,7 @@ export default function CommandPalette({ hub, onSelect }: { hub: Hub; onSelect: 
                   <span className="block truncate font-mono text-xs text-muted">{e.sub}</span>
                 </span>
                 <span className="hidden text-xs text-muted sm:block">
-                  {e.sel.type === "model" ? `${domainOf(e.sel.item.task)} · ${formatTask(e.sel.item.task)}` : TYPE_LABEL[e.sel.type]}
+                  {e.sel.type === "model" ? `${domainOf(e.sel.item.task)} · ${formatTask(e.sel.item.task)}` : typeLabel[e.sel.type]}
                 </span>
                 <span className="font-mono text-xs tabular-nums text-gold-300">{e.meta}</span>
               </button>

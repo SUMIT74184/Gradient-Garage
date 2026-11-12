@@ -16,6 +16,7 @@ from app.models import (
     ContentItem,
     ContentType,
     Label,
+    Media,
     Revision,
     Role,
     Source,
@@ -152,6 +153,11 @@ def _apply(db: Session, item: ContentItem, values: dict[str, Any], keys: set[str
             item.labels = resolve_labels(db, value)
         elif key == "benchmarks":
             item.benchmarks = [Benchmark(**b, position=i) for i, b in enumerate(value)]  # type: ignore[attr-defined]
+        elif key == "cover_media_id":
+            if value is not None and db.get(Media, value) is None:
+                raise Invalid("cover image not found", errors=[{"loc": ["coverMediaId"], "msg": "Image not found"}])
+            item.cover_media_id = value
+            item.cover = db.get(Media, value) if value else None
         elif key == "badges":
             item.badges = [getattr(b, "value", b) for b in value]
         else:
@@ -166,7 +172,15 @@ def _check_version(item: ContentItem, version: int) -> None:
         )
 
 
-def create_item(db: Session, payload: CommonFields, actor: User, *, source: Source = Source.local) -> ContentItem:
+def create_item(
+    db: Session,
+    payload: CommonFields,
+    actor: User,
+    *,
+    source: Source = Source.local,
+    note: str = "Created",
+    action: str = "create",
+) -> ContentItem:
     t = ContentType(payload.type)  # type: ignore[attr-defined]
     _check_slug(db, t, payload.slug)
     item = TYPE_CLASS[t](
@@ -184,12 +198,25 @@ def create_item(db: Session, payload: CommonFields, actor: User, *, source: Sour
     db.flush()
     db.refresh(item)
     snap = snapshot(item)
-    record_revision(db, entity_type=ENTITY, entity_id=str(item.id), version=1, snapshot=snap, actor=actor, note="Created")
-    audit(db, actor=actor, action="create", entity_type=t.value, entity_id=str(item.id), entity_label=item.name)
+    record_revision(db, entity_type=ENTITY, entity_id=str(item.id), version=1, snapshot=snap, actor=actor, note=note)
+    audit(db, actor=actor, action=action, entity_type=t.value, entity_id=str(item.id), entity_label=item.name)
     return item
 
 
-def _update(db: Session, item: ContentItem, changes_camel: dict[str, Any], actor: User, note: str = "") -> ContentItem:
+def _update(
+    db: Session,
+    item: ContentItem,
+    changes_camel: dict[str, Any],
+    actor: User,
+    note: str = "",
+    *,
+    action: str = "update",
+    mark_edited: bool = True,
+) -> ContentItem:
+    """Apply a camelCase patch: validate, write, bump version, record a revision and an audit entry.
+
+    `mark_edited=False` is for the sync job: its changes don't count as admin overrides.
+    """
     before = snapshot(item)
     validated = _validate(item.type, {**before, **changes_camel})
     values = validated.model_dump(exclude={"type"})
@@ -208,13 +235,13 @@ def _update(db: Session, item: ContentItem, changes_camel: dict[str, Any], actor
     item.version += 1
     item.updated_by_id = actor.id
     item.updated_at = _now()
-    if item.source is Source.huggingface:
+    if mark_edited and item.source is Source.huggingface:
         item.edited_fields = sorted(set(item.edited_fields or []) | {to_snake(k) for k in changes})
     record_revision(
         db, entity_type=ENTITY, entity_id=str(item.id), version=item.version, snapshot=after, actor=actor, note=note
     )
     audit(
-        db, actor=actor, action="update", entity_type=item.type.value, entity_id=str(item.id),
+        db, actor=actor, action=action, entity_type=item.type.value, entity_id=str(item.id),
         entity_label=item.name, changes=changes,
     )
     return item
@@ -264,6 +291,28 @@ def delete_item(db: Session, item_id: uuid.UUID, actor: User) -> None:
     db.delete(item)
 
 
+def reset_overrides(db: Session, item_id: uuid.UUID, fields: list[str], version: int, actor: User) -> ContentItem:
+    """Hand fields back to the Hugging Face sync: they get the remote value on the next sync run."""
+    item = get_item(db, item_id, lock=True)
+    _check_version(item, version)
+    if item.source is not Source.huggingface:
+        raise Conflict("only Hugging Face items have synced fields")
+    wanted = {to_snake(f) for f in fields}
+    current = set(item.edited_fields or [])
+    released = sorted(current & wanted)
+    if not released:
+        return item
+    item.edited_fields = sorted(current - wanted)
+    item.version += 1
+    item.updated_by_id = actor.id
+    item.updated_at = _now()
+    audit(
+        db, actor=actor, action="sync.release", entity_type=item.type.value, entity_id=str(item.id),
+        entity_label=item.name, changes={"editedFields": [sorted(current), item.edited_fields]},
+    )
+    return item
+
+
 # ---------- revisions ----------
 
 
@@ -297,6 +346,8 @@ def restore_revision(db: Session, item_id: uuid.UUID, rev_version: int, version:
     # Labels deleted since that revision can't come back
     existing = {str(i) for i in db.scalars(select(Label.id).where(Label.id.in_(snap.get("labelIds") or [])))}
     snap["labelIds"] = [i for i in snap.get("labelIds") or [] if i in existing]
+    if snap.get("coverMediaId") and db.get(Media, uuid.UUID(snap["coverMediaId"])) is None:
+        snap["coverMediaId"] = None
     return _update(db, item, snap, actor, note=f"Restored from v{rev_version}")
 
 

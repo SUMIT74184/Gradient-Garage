@@ -1,20 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { OPEN_SEARCH_EVENT } from "@/components/CommandPalette";
-import { SECTIONS, href } from "@/config/sections";
-import { site } from "@/config/site";
-
-const LINKS = [
-  { href: href("model"), label: SECTIONS.model.label },
-  { href: href("demo"), label: SECTIONS.demo.label },
-  { href: "#fine-tuned", label: "Fine-tunes", wide: true },
-  { href: "#leaderboard", label: "Leaderboard", wide: true },
-  { href: href("dataset"), label: SECTIONS.dataset.label },
-  { href: href("library"), label: SECTIONS.library.label },
-];
+import AccountMenu from "@/components/AccountMenu";
+import { useSiteContent } from "@/components/SiteContentProvider";
+import { usePathname, useRouter } from "next/navigation";
+import { href } from "@/config/sections";
 
 export function Logo({ size = 32 }: { size?: number }) {
+  const { site } = useSiteContent();
   return (
     <span
       aria-hidden="true"
@@ -27,11 +20,23 @@ export function Logo({ size = 32 }: { size?: number }) {
 }
 
 export default function Navbar() {
+  const { site, sections: S } = useSiteContent();
+  // Section links are anchors on the home page; from any other page they go home first
+  const base = usePathname() === "/" ? "" : "/";
+  const router = useRouter();
+  const LINKS = [
+    { href: base + href("model"), label: S.model.label },
+    { href: base + href("demo"), label: S.demo.label },
+    { href: `${base}#fine-tuned`, label: "Fine-tunes", wide: true },
+    { href: `${base}#leaderboard`, label: "Leaderboard", wide: true },
+    { href: base + href("dataset"), label: S.dataset.label },
+    { href: base + href("library"), label: S.library.label },
+  ];
   return (
     <header className="sticky top-0 z-40 h-14">
       <div className="border-b border-line bg-ink/70 backdrop-blur-lg">
         <nav className="mx-auto flex h-14 w-full max-w-[1400px] items-center px-4">
-          <a href="#" className="inline-flex items-center gap-2.5">
+          <a href={base ? "/" : "#"} className="inline-flex items-center gap-2.5">
             <Logo />
             <span className="display text-lg text-fg">
               {site.name}
@@ -50,7 +55,7 @@ export default function Navbar() {
           <div className="ms-auto flex items-center gap-1.5">
             <button
               type="button"
-              onClick={() => window.dispatchEvent(new Event(OPEN_SEARCH_EVENT))}
+              onClick={() => (base ? router.push("/?search=1") : window.dispatchEvent(new Event(OPEN_SEARCH_EVENT)))}
               className="inline-flex w-[200px] items-center gap-2 rounded-full border border-line bg-surface-2/50 p-1.5 ps-2.5 text-sm text-muted transition-colors hover:bg-surface-2 hover:text-fg max-md:w-auto"
             >
               <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2">
@@ -72,18 +77,7 @@ export default function Navbar() {
             >
               <GitHubIcon className="size-5" />
             </a>
-            <Link
-              href="/login"
-              className="rounded-full px-3 py-1.5 text-sm text-muted transition-colors hover:bg-surface-2 hover:text-fg max-sm:hidden"
-            >
-              Log in
-            </Link>
-            <Link
-              href="/signup"
-              className="rounded-full bg-brand px-3.5 py-1.5 text-sm font-medium text-brand-fg transition-colors hover:bg-brand-hover"
-            >
-              Sign up
-            </Link>
+            <AccountMenu />
           </div>
         </nav>
       </div>

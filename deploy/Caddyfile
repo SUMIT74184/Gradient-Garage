@@ -1,0 +1,5 @@
+# HTTPS certificates are issued automatically for $DOMAIN (DNS must point at this server).
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:3000
+}

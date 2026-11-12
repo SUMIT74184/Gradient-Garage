@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
-import { site } from "@/config/site";
+import { getSiteContent } from "@/lib/content";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,10 +19,10 @@ const spaceGrotesk = Space_Grotesk({
   weight: ["400", "500", "600"],
 });
 
-export const metadata: Metadata = {
-  title: site.name,
-  description: site.tagline,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { site } = await getSiteContent();
+  return { title: site.name, description: site.tagline };
+}
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

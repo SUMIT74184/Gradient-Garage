@@ -46,6 +46,7 @@ class CommonFields(CamelModel):
     content_date: Optional[date] = None
     tags: list[Annotated[str, Field(min_length=1, max_length=80)]] = Field(default_factory=list)
     label_ids: list[uuid.UUID] = Field(default_factory=list)
+    cover_media_id: Optional[uuid.UUID] = None
 
     @field_validator("links")
     @classmethod

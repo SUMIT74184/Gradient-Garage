@@ -1,7 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { getDatasets } from "@/lib/datasets";
 import { getDemos } from "@/lib/demos";
-import { enrichLibraries, getLibraries } from "@/lib/libraries";
+import { getLibraries } from "@/lib/libraries";
 import { getModels } from "@/lib/models";
 import { api, API_URL } from "@/lib/api";
 import { byCuration } from "@/lib/rank";
@@ -37,6 +37,7 @@ async function getApiHub(): Promise<Hub> {
     models: hub.models.sort(byCuration((m) => m.downloads)),
     datasets: hub.datasets.sort(byCuration((d) => d.downloads)),
     demos: hub.demos.sort(byCuration((d) => d.likes)),
-    libraries: await enrichLibraries(hub.libraries),
+    // Stars and versions are refreshed by the API's sync job (admin → Hugging Face sync)
+    libraries: hub.libraries.sort(byCuration((l) => l.stars)),
   };
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import SectionHeader from "@/components/SectionHeader";
+import { useSections } from "@/components/SiteContentProvider";
 import StatusBadges from "@/components/StatusBadges";
 import { SECTIONS } from "@/config/sections";
 import { EmptyState, Pill } from "@/components/ui";
@@ -22,12 +23,13 @@ export default function DemosSection({
   models: MLModel[];
   onSelect: (s: Selection) => void;
 }) {
+  const sections = useSections();
   const byId = new Map(models.map((m) => [m.id.toLowerCase(), m]));
 
   return (
     <section id={SECTIONS.demo.id} className="scroll-mt-24">
       <SectionHeader
-        eyebrow={SECTIONS.demo.label}
+        eyebrow={sections.demo.label}
         title="Don't read about it."
         accent="Try it."
         description="Live apps for the checkpoints. Open one in a new tab or run it right here on the page."
@@ -58,6 +60,10 @@ export default function DemosSection({
                     backgroundImage: `radial-gradient(55% 90% at ${25 + (h % 50)}% ${30 + ((h >> 3) % 40)}%, rgb(240 122 42 / 0.2), transparent 70%)`,
                   }}
                 >
+                  {d.cover && (
+                    // eslint-disable-next-line @next/next/no-img-element -- admin uploads, already sized by the API
+                    <img src={d.cover.url} alt="" loading="lazy" className="absolute inset-0 size-full object-cover opacity-70 transition duration-500 group-hover:scale-105" />
+                  )}
                   <span className="absolute size-36 rounded-full bg-brand/10 blur-2xl transition duration-500 group-hover:scale-125" />
                   <span
                     className="absolute size-32 rounded-full border border-line-strong transition duration-500 group-hover:scale-105"

@@ -79,7 +79,7 @@ def test_revisions_and_restore(client):
     client.patch(url, json={"version": 1, "description": "v2 text", "tags": ["vision"]})
     revs = client.get(f"{url}/revisions").json()
     assert [r["version"] for r in revs] == [2, 1]
-    assert revs[0]["createdBy"] == "owner@localhost"
+    assert revs[0]["createdBy"] == "owner@example.com"
 
     r = client.post(f"{url}/revisions/1/restore", json={"version": 2})
     assert r.status_code == 200

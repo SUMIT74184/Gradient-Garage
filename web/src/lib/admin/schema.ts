@@ -129,6 +129,7 @@ export function emptyValues(type: ContentType): ItemValues {
     contentDate: new Date().toISOString().slice(0, 10),
     tags: [],
     labelIds: [],
+    coverMediaId: null,
   };
   for (const f of FIELDS[type]) {
     base[f.key] =
@@ -146,6 +147,6 @@ export function emptyValues(type: ContentType): ItemValues {
 
 /** The editable keys for a type, in the order the API knows them. */
 export function editableKeys(type: ContentType): string[] {
-  const common = ["slug", "name", "description", "links", "badges", "featured", "contentDate", "tags", "labelIds"];
+  const common = ["slug", "name", "description", "links", "badges", "featured", "contentDate", "tags", "labelIds", "coverMediaId"];
   return [...common, ...FIELDS[type].map((f) => f.key), ...(type === "model" ? ["benchmarks"] : [])];
 }

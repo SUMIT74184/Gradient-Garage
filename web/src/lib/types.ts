@@ -10,6 +10,8 @@ export type Curation = {
   featured?: boolean;
   /** Manual pin order within a section, lower first */
   sortOrder?: number;
+  /** Uploaded cover image (same-origin /media/… URL) */
+  cover?: { url: string; alt: string; width: number; height: number };
 };
 
 export type Benchmark = {
